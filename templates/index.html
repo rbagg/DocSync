@@ -1,0 +1,56 @@
+<!-- templates/index.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="section">
+        <h2 class="section-title">Document Alignment Dashboard</h2>
+
+        {% if project %}
+            <div class="card">
+                <div class="card-header">
+                    <h3>Current Project Status</h3>
+                    <span class="timestamp">Last updated: {{ project.timestamp.strftime('%Y-%m-%d %H:%M') }}</span>
+                </div>
+                <div class="card-content">
+                    <p>Your project has {{ project.get_content_dict().get('prd', {})|length }} PRD sections, 
+                       {{ project.get_content_dict().get('prfaq', {})|length }} PRFAQ sections, 
+                       {{ project.get_content_dict().get('strategy', {})|length }} strategy sections, and 
+                       {{ project.get_content_dict().get('tickets', [])|length }} tickets connected.</p>
+
+                    <form action="{{ url_for('manual_update') }}" method="post">
+                        <button type="submit" class="button">Check Alignment</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3>Alignment Suggestions</h3>
+                </div>
+                <div class="card-content">
+                    {% if suggestions %}
+                        <ul class="suggestions-list">
+                            {% for suggestion in suggestions %}
+                                <li>
+                                    <strong>{{ suggestion.action|capitalize }}</strong>: {{ suggestion.description }}
+                                    <span class="details">
+                                        From <span class="source">{{ suggestion.source }}</span> to 
+                                        <span class="target">{{ suggestion.target }}</span>
+                                    </span>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p>No alignment suggestions available yet. Click "Check Alignment" to analyze your connected documents.</p>
+                    {% endif %}
+                </div>
+            </div>
+        {% else %}
+            <div class="card empty-state">
+                <p>No documents connected yet. Go to <a href="{{ url_for('setup') }}">Connect Documents</a> to get started.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
