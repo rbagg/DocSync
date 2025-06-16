@@ -2,55 +2,174 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container">
-    <div class="section">
-        <h2 class="section-title">Document Alignment Dashboard</h2>
 
-        {% if project %}
-            <div class="card">
-                <div class="card-header">
-                    <h3>Current Project Status</h3>
-                    <span class="timestamp">Last updated: {{ project.timestamp.strftime('%Y-%m-%d %H:%M') }}</span>
-                </div>
-                <div class="card-content">
-                    <p>Your project has {{ project.get_content_dict().get('prd', {})|length }} PRD sections, 
-                       {{ project.get_content_dict().get('prfaq', {})|length }} PRFAQ sections, 
-                       {{ project.get_content_dict().get('strategy', {})|length }} strategy sections, and 
-                       {{ project.get_content_dict().get('tickets', [])|length }} tickets connected.</p>
-
-                    <form action="{{ url_for('manual_update') }}" method="post">
-                        <button type="submit" class="button">Check Alignment</button>
-                    </form>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-header">
-                    <h3>Alignment Suggestions</h3>
-                </div>
-                <div class="card-content">
-                    {% if suggestions %}
-                        <ul class="suggestions-list">
-                            {% for suggestion in suggestions %}
-                                <li>
-                                    <strong>{{ suggestion.action|capitalize }}</strong>: {{ suggestion.description }}
-                                    <span class="details">
-                                        From <span class="source">{{ suggestion.source }}</span> to 
-                                        <span class="target">{{ suggestion.target }}</span>
-                                    </span>
-                                </li>
-                            {% endfor %}
-                        </ul>
-                    {% else %}
-                        <p>No alignment suggestions available yet. Click "Check Alignment" to analyze your connected documents.</p>
-                    {% endif %}
-                </div>
-            </div>
-        {% else %}
-            <div class="card empty-state">
-                <p>No documents connected yet. Go to <a href="{{ url_for('setup') }}">Connect Documents</a> to get started.</p>
-            </div>
+{% if project and alignment_results %}
+    <div class="processing-info">
+        <strong>Latest Analysis:</strong> {{ alignment_results.processing_method.replace('_', ' ').title() }} processing completed<br>
+        <strong>API Calls Used:</strong> {{ alignment_results.api_calls_used }}<br>
+        <strong>Documents Analyzed:</strong> {{ project.get_content_dict().keys()|list|join(', ')|title }}<br>
+        <strong>Last Updated:</strong> {{ project.timestamp.strftime('%Y-%m-%d %H:%M') }}
+        {% if alignment_results.processing_method == 'self_critique' %}
+            <br><em>Enhanced analysis: AI generated initial alignment check → critiqued its own work → created improved suggestions</em>
         {% endif %}
     </div>
-</div>
-{% endblock %}
+
+    {% set analysis = alignment_results.analysis %}
+
+    <div class="content-section">
+        <h2>Alignment Score: {{ analysis.alignment_score }}/10 
+            {% if analysis.alignment_score >= 8 %}
+                <span class="status-indicator status-aligned">Well Aligned</span>
+            {% elif analysis.alignment_score >= 6 %}
+                <span class="status-indicator status-needs-review">Needs Review</span>
+            {% else %}
+                <span class="status-indicator status-misaligned">Misaligned</span>
+            {% endif %}
+        </h2>
+
+        <div class="alignment-result">
+            {{ analysis.overall_assessment }}
+        </div>
+
+        {% if analysis.critical_misalignments %}
+            <h3>Critical Misalignments ({{ analysis.critical_misalignments|length }})</h3>
+            {% for misalignment in analysis.critical_misalignments %}
+                <div class="{% if misalignment.impact == 'High' %}critical-issue{% else %}misalignment-warning{% endif %}">
+                    <h4>{{ misalignment.issue }}</h4>
+                    <p><strong>Documents:</strong> {{ misalignment.documents|join(' ↔ ') }}</p>
+                    <p><strong>Impact:</strong> {{ misalignment.impact }}</p>
+                    <p><strong>Suggestion:</strong> {{ misalignment.suggestion }}</p>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        {% if analysis.suggestions %}
+            <h3>Alignment Suggestions ({{ analysis.suggestions|length }})</h3>
+            <ul class="suggestions-list">
+                {% for suggestion in analysis.suggestions %}
+                    <li class="suggestion-priority-{{ suggestion.priority|lower }}">
+                        <strong>{{ suggestion.action|title }}</strong>: {{ suggestion.description }}
+                        <br><small>
+                            <strong>Type:</strong> {{ suggestion.type|replace('_', ' ')|title }} | 
+                            <strong>Priority:</strong> {{ suggestion.priority }} | 
+                            <strong>Source:</strong> {{ suggestion.source|title }} → <strong>Target:</strong> {{ suggestion.target|title }}
+                        </small>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+        {% if alignment_results.enhancement_suggestions %}
+            <h3>Document Enhancement Opportunities</h3>
+            {% for enhancement in alignment_results.enhancement_suggestions %}
+                <div class="enhancement-suggestion">
+                    <h4>{{ enhancement.document_type|upper }} Enhancement</h4>
+                    <p>{{ enhancement.suggestion }}</p>
+                    <small><strong>Priority:</strong> {{ enhancement.priority }}</small>
+                    <br><small><em>Consider using DocMint to enhance individual document quality</em></small>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        {% if alignment_results.processing_method == 'self_critique' and alignment_results.get('process_details') %}
+            <details class="process-details">
+                <summary><strong>Self-Critique Enhancement Process</strong></summary>
+                <div class="process-content">
+                    <p><strong>Method:</strong> Initial analysis → Self-critique → Enhanced suggestions</p>
+                    <p><strong>Result:</strong> Higher quality alignment analysis through AI self-improvement</p>
+                    <p><strong>API Calls:</strong> {{ alignment_results.api_calls_used }} calls for enhanced quality</p>
+                    <small><em>This analysis used self-critique to improve accuracy and actionability of suggestions</em></small>
+                </div>
+            </details>
+        {% endif %}
+    </div>
+
+    <div class="content-section">
+        <h2>Connected Documents</h2>
+        <div class="connection-status">
+            {% set content = project.get_content_dict() %}
+            <div class="connection-item {% if content.prd %}connected{% endif %}">
+                <strong>PRD:</strong> {% if content.prd %}{{ content.prd|length }} sections{% else %}Not connected{% endif %}
+            </div>
+            <div class="connection-item {% if content.prfaq %}connected{% endif %}">
+                <strong>PRFAQ:</strong> {% if content.prfaq %}{{ content.prfaq|length }} sections{% else %}Not connected{% endif %}
+            </div>
+            <div class="connection-item {% if content.strategy %}connected{% endif %}">
+                <strong>Strategy:</strong> {% if content.strategy %}{{ content.strategy|length }} sections{% else %}Not connected{% endif %}
+            </div>
+            <div class="connection-item {% if content.tickets %}connected{% endif %}">
+                <strong>Tickets:</strong> {% if content.tickets %}{{ content.tickets|length }} items{% else %}None connected{% endif %}
+            </div>
+        </div>
+
+        <div style="margin-top: 20px;">
+            <a href="{{ url_for('analyze') }}" class="button">Analyze Document Alignment</a>
+        </div>
+    </div>
+
+{% else %}
+    <div class="empty-state">
+        <h3>Welcome to DocSync</h3>
+        <p>Keep your project documents perfectly aligned with AI-powered analysis.</p>
+
+        <div class="content-section">
+            <h3>How DocSync Works</h3>
+            <ol>
+                <li><strong>Connect</strong> your project documents (PRDs, tickets, strategy docs)</li>
+                <li><strong>Analyze</strong> alignment using AI self-critique technology</li>
+                <li><strong>Receive</strong> specific, actionable suggestions for perfect alignment</li>
+                <li><strong>Maintain</strong> consistency as documents evolve</li>
+            </ol>
+        </div>
+
+        <div class="content-section">
+            <h3>What We Analyze</h3>
+            <ul>
+                <li><strong>PRD ↔ Tickets:</strong> Requirements vs implementation alignment</li>
+                <li><strong>Strategy ↔ PRD:</strong> Business goals vs product features</li>
+                <li><strong>PRFAQ ↔ Functionality:</strong> Customer messaging vs actual capabilities</li>
+                <li><strong>Cross-Document Consistency:</strong> Timelines, priorities, and scope</li>
+            </ul>
+        </div>
+
+        <div class="content-section">
+            <h3>Smart AI Processing</h3>
+            <div class="processing-info">
+                <p><strong>Simple Analysis:</strong> Fast alignment check for basic projects (1 API call)</p>
+                <p><strong>Self-Critique Enhancement:</strong> AI generates analysis → critiques its own work → creates enhanced suggestions (3 API calls)</p>
+                <p><em>DocSync automatically chooses the right processing method based on project complexity</em></p>
+            </div>
+        </div>
+
+        <a href="{{ url_for('setup') }}" class="button">Connect Your First Document</a>
+    </div>
+{% endif %}
+
+{% endblock %} if content.prfaq %}{{ content.prfaq|length }} sections{% else %}Not connected{% endif %}
+            </div>
+            <div class="connection-item {% if content.strategy %}connected{% endif %}">
+                <strong>Strategy:</strong> {% if content.strategy %}{{ content.strategy|length }} sections{% else %}Not connected{% endif %}
+            </div>
+            <div class="connection-item {% if content.tickets %}connected{% endif %}">
+                <strong>Tickets:</strong> {% if content.tickets %}{{ content.tickets|length }} items{% else %}None connected{% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div style="margin-top: 30px;">
+        <a href="{{ url_for('analyze') }}" class="button">Re-analyze Alignment</a>
+        <a href="{{ url_for('setup') }}" class="button button-secondary">Connect More Documents</a>
+    </div>
+
+{% elif project %}
+    <div class="content-section">
+        <h2>Documents Connected</h2>
+        <p>You have documents connected but haven't analyzed alignment yet.</p>
+
+        {% set content = project.get_content_dict() %}
+        <div class="connection-status">
+            <div class="connection-item {% if content.prd %}connected{% endif %}">
+                <strong>PRD:</strong> {% if content.prd %}{{ content.prd|length }} sections{% else %}Not connected{% endif %}
+            </div>
+            <div class="connection-item {% if content.prfaq %}connected{% endif %}">
+                <strong>PRFAQ:</strong> {%

@@ -2,89 +2,129 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container">
-    <div class="section">
-        <h2 class="section-title">Connect Documents</h2>
 
-        <div class="card">
-            <div class="card-header">
-                <h3>Google Docs</h3>
-            </div>
-            <div class="card-content">
-                {% if 'google_token' in session %}
-                    <p>Connected to Google Docs!</p>
+<h2>Connect Your Project Documents</h2>
 
-                    <form action="{{ url_for('connect_document') }}" method="post">
-                        <input type="hidden" name="type" value="google_docs">
-                        <div class="form-group">
-                            <label for="google_doc_id">Document ID:</label>
-                            <input type="text" id="google_doc_id" name="id" placeholder="Enter Google Doc ID" required>
-                            <small>Example: 1abc123def456ghi789 (from the URL)</small>
-                        </div>
-                        <div class="form-group">
-                            <label for="doc_type">Document Type:</label>
-                            <select id="doc_type" name="doc_type">
-                                <option value="prd">PRD (Product Requirements Document)</option>
-                                <option value="prfaq">PRFAQ (Press Release & FAQ)</option>
-                                <option value="strategy">Strategy Document</option>
-                            </select>
-                        </div>
-                        <button type="submit" class="button">Connect Document</button>
-                    </form>
-                {% else %}
-                    <p>Connect your Google Docs account to import documents:</p>
-                    <a href="{{ url_for('google_auth') }}" class="button">Connect Google Docs</a>
-                {% endif %}
-            </div>
+<div class="content-section">
+    <p>Connect documents from different platforms to analyze their alignment. DocSync will identify misalignments and suggest specific improvements.</p>
+</div>
+
+<div class="content-section">
+    <h3>📄 Documents (Google Docs)</h3>
+    {% if 'google_token' in session %}
+        <div class="processing-info">
+            <strong>✓ Connected to Google Docs</strong>
         </div>
 
-        <div class="card">
-            <div class="card-header">
-                <h3>Jira</h3>
-            </div>
-            <div class="card-content">
-                <form action="{{ url_for('connect_document') }}" method="post">
-                    <input type="hidden" name="type" value="jira">
-                    <div class="form-group">
-                        <label for="jira_project">Jira Project Key:</label>
-                        <input type="text" id="jira_project" name="id" placeholder="Enter Jira Project Key (e.g., PROJ)" required>
-                    </div>
-                    <button type="submit" class="button">Connect Jira Project</button>
-                </form>
-            </div>
-        </div>
+        <form action="{{ url_for('connect_document') }}" method="post">
+            <input type="hidden" name="type" value="google_docs">
 
-        <div class="card">
-            <div class="card-header">
-                <h3>Linear</h3>
+            <div class="form-group">
+                <label for="google_doc_id">Document ID:</label>
+                <input type="text" id="google_doc_id" name="id" placeholder="1abc123def456ghi789 (from Google Docs URL)" required>
+                <small>Copy the document ID from your Google Docs URL</small>
             </div>
-            <div class="card-content">
-                <form action="{{ url_for('connect_document') }}" method="post">
-                    <input type="hidden" name="type" value="linear">
-                    <div class="form-group">
-                        <label for="linear_project">Linear Project ID:</label>
-                        <input type="text" id="linear_project" name="id" placeholder="Enter Linear Project ID" required>
-                    </div>
-                    <button type="submit" class="button">Connect Linear Project</button>
-                </form>
-            </div>
-        </div>
 
-        <div class="card">
-            <div class="card-header">
-                <h3>Confluence</h3>
+            <div class="form-group">
+                <label for="doc_type">Document Type:</label>
+                <select id="doc_type" name="doc_type" required>
+                    <option value="">Choose document type...</option>
+                    <option value="prd">PRD (Product Requirements Document)</option>
+                    <option value="prfaq">PRFAQ (Press Release & FAQ)</option>
+                    <option value="strategy">Strategy Document</option>
+                </select>
             </div>
-            <div class="card-content">
-                <form action="{{ url_for('connect_document') }}" method="post">
-                    <input type="hidden" name="type" value="confluence">
-                    <div class="form-group">
-                        <label for="confluence_page">Confluence Page ID:</label>
-                        <input type="text" id="confluence_page" name="id" placeholder="Enter Confluence Page ID" required>
-                    </div>
-                    <button type="submit" class="button">Connect Confluence Page</button>
-                </form>
-            </div>
+
+            <button type="submit" class="button">Connect Document</button>
+        </form>
+    {% else %}
+        <p>Connect your Google account to access documents:</p>
+        <a href="{{ url_for('google_auth') }}" class="button">Connect Google Docs</a>
+    {% endif %}
+</div>
+
+<div class="content-section">
+    <h3>🎫 Task Management</h3>
+
+    <h4>Jira</h4>
+    <form action="{{ url_for('connect_document') }}" method="post" style="margin-bottom: 20px;">
+        <input type="hidden" name="type" value="jira">
+        <div class="form-group">
+            <label for="jira_project">Jira Project Key:</label>
+            <input type="text" id="jira_project" name="id" placeholder="PROJ (your project key)" required>
+            <small>Find this in your Jira project URL or settings</small>
         </div>
+        <button type="submit" class="button">Connect Jira Project</button>
+    </form>
+
+    <h4>Linear</h4>
+    <form action="{{ url_for('connect_document') }}" method="post">
+        <input type="hidden" name="type" value="linear">
+        <div class="form-group">
+            <label for="linear_project">Linear Project ID:</label>
+            <input type="text" id="linear_project" name="id" placeholder="LIN (your project identifier)" required>
+            <small>Your Linear project identifier</small>
+        </div>
+        <button type="submit" class="button">Connect Linear Project</button>
+    </form>
+</div>
+
+<div class="content-section">
+    <h3>📋 Knowledge Base (Confluence)</h3>
+    <form action="{{ url_for('connect_document') }}" method="post">
+        <input type="hidden" name="type" value="confluence">
+        <div class="form-group">
+            <label for="confluence_page">Confluence Page ID:</label>
+            <input type="text" id="confluence_page" name="id" placeholder="123456789 (from page URL)" required>
+            <small>Copy the page ID from your Confluence page URL</small>
+        </div>
+        <button type="submit" class="button">Connect Confluence Page</button>
+    </form>
+</div>
+
+<div class="content-section">
+    <h3>💡 Tips for Better Alignment</h3>
+    <div style="background-color: #e7f3ff; padding: 15px; border-radius: 6px; border-left: 4px solid #007bff;">
+        <p><strong>For best results:</strong></p>
+        <ul>
+            <li>Connect at least 2 different document types (e.g., PRD + Tickets)</li>
+            <li>Ensure documents contain actual content, not just placeholders</li>
+            <li>Use descriptive document names and clear section headers</li>
+            <li>Consider enhancing individual documents with <a href="https://docmint.repl.co" target="_blank">DocMint</a> before analyzing alignment</li>
+        </ul>
     </div>
 </div>
+
+{% if project %}
+    {% set content = project.get_content_dict() %}
+    <div class="content-section">
+        <h3>Currently Connected</h3>
+        <div class="connection-status">
+            <div class="connection-item {% if content.prd %}connected{% endif %}">
+                <strong>PRD:</strong> {% if content.prd %}{{ content.prd|length }} sections{% else %}Not connected{% endif %}
+            </div>
+            <div class="connection-item {% if content.prfaq %}connected{% endif %}">
+                <strong>PRFAQ:</strong> {% if content.prfaq %}{{ content.prfaq|length }} sections{% else %}Not connected{% endif %}
+            </div>
+            <div class="connection-item {% if content.strategy %}connected{% endif %}">
+                <strong>Strategy:</strong> {% if content.strategy %}{{ content.strategy|length }} sections{% else %}Not connected{% endif %}
+            </div>
+            <div class="connection-item {% if content.tickets %}connected{% endif %}">
+                <strong>Tickets:</strong> {% if content.tickets %}{{ content.tickets|length }} items{% else %}None connected{% endif %}
+            </div>
+        </div>
+
+        {% if (content.prd and content.tickets) or (content.strategy and content.prd) or (content.prfaq and content.prd) %}
+            <div style="margin-top: 20px;">
+                <a href="{{ url_for('analyze') }}" class="button">Analyze Alignment Now</a>
+            </div>
+        {% else %}
+            <div style="margin-top: 20px; background-color: #fff3cd; padding: 15px; border-radius: 6px;">
+                <p><strong>Connect more documents to enable alignment analysis.</strong></p>
+                <p>You need at least 2 different document types for meaningful alignment analysis.</p>
+            </div>
+        {% endif %}
+    </div>
+{% endif %}
+
 {% endblock %}
